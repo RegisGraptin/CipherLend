@@ -1,6 +1,6 @@
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 import { ethers, fhevm } from "hardhat";
-import { ConfidentialLending, ERC20Mock, ERC7984Mock, FHECounter, FHECounter__factory } from "../types";
+import { ConfidentialLending, ERC20Mock, ERC7984Mock } from "../types";
 import { expect } from "chai";
 import { FhevmType } from "@fhevm/hardhat-plugin";
 import { parseUnits, ZeroHash } from "ethers";
