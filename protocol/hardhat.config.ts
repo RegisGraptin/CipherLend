@@ -4,6 +4,7 @@ import "@nomicfoundation/hardhat-ethers";
 import "@nomicfoundation/hardhat-verify";
 import "@typechain/hardhat";
 import "hardhat-deploy";
+import "hardhat-dependency-compiler";
 import "hardhat-gas-reporter";
 import type { HardhatUserConfig } from "hardhat/config";
 import { vars } from "hardhat/config";
@@ -63,6 +64,9 @@ const config: HardhatUserConfig = {
     cache: "./cache",
     sources: "./contracts",
     tests: "./test",
+  },
+  dependencyCompiler: {
+    paths: ["lib/aave-v3-origin/src/contracts/interfaces/IPool.sol"],
   },
   solidity: {
     version: "0.8.27",
