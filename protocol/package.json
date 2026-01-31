@@ -25,6 +25,7 @@
   ],
   "dependencies": {
     "@fhevm/solidity": "^0.10.0",
+    "@openzeppelin/confidential-contracts": "github:OpenZeppelin/openzeppelin-confidential-contracts#62b5e75725846121fb9587aca165f9c9ba9ce2f6",
     "encrypted-types": "^0.0.4"
   },
   "devDependencies": {
@@ -100,6 +101,6 @@
     "axios@>=1.0.0 <1.8.2": ">=1.8.2",
     "axios@<0.29.1": ">=0.29.1",
     "cookie@<0.7.0": ">=0.7.0",
-    "minimatch": "^3.1.2"
+    "minimatch": "^9.0.5"
   }
 }
