@@ -120,8 +120,8 @@ contract ConfidentialLending is
      * @return transferred The encrypted amount actually transferred
      */
     function _update(address from, address to, euint64 amount) internal virtual override returns (euint64 transferred) {
-        _updateUserReward(from);
-        _updateUserReward(to);
+        if (from != address(0)) _updateUserReward(from);
+        if (to != address(0)) _updateUserReward(to);
         transferred = super._update(from, to, amount);
     }
 
