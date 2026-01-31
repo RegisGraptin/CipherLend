@@ -14,6 +14,7 @@ interface IConfidentialLending {
 
     error TooEarlyForNextRound();
     error MissingDistinctUsers();
+    error RoundNotFinalized();
 
     // TODO: Functions
 }

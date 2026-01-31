@@ -61,6 +61,10 @@ contract ConfidentialLending is
         // Fetch the asset from AAEVE Pool
         aAsset = AaveAdapter.fetchAssets(AAVE_POOL_ADDRESS, asset);
 
+        // Initialize the round tracking
+        currentRound = 1;
+        lastUpdateTime = block.timestamp;
+
         // Defined the state of the lending pool
         nextRoundDelta = FHE.asEuint64(INT64_OFFSET);
         FHE.allowThis(nextRoundDelta);
@@ -170,9 +174,26 @@ contract ConfidentialLending is
         _burn(msg.sender, eAmount);
         _updateDistinctUsers(msg.sender);
 
+        // Track the amount to withdraw for the user in the current round
+        eAmountToWithdraw[msg.sender][currentRound] = FHE.add(eAmountToWithdraw[msg.sender][currentRound], eAmount);
+        FHE.allowThis(eAmountToWithdraw[msg.sender][currentRound]);
+        FHE.allow(eAmountToWithdraw[msg.sender][currentRound], msg.sender);
+
         // Update the next round delta
         nextRoundDelta = FHE.sub(nextRoundDelta, eAmount);
         FHE.allowThis(nextRoundDelta);
+    }
+
+    /**
+     * @notice Finalizes the withdrawal for a user after the round has been executed
+     * @param receiver The address of the user receiving the withdrawn funds
+     * @param roundIndex The round index for which to finalize the withdrawal
+     */
+    function finalizeWithdraw(address receiver, uint256 roundIndex) external {
+        require(roundIndex < currentRound, RoundNotFinalized());
+
+        // Transfer the confidential tokens from the user to the contract
+        _confidentialWrapper.confidentialTransfer(receiver, eAmountToWithdraw[receiver][roundIndex]);
     }
 
     /**
@@ -223,6 +244,8 @@ contract ConfidentialLending is
 
             totalLendedAmount -= withdrawnAmount;
         } else if (roundAmount > INT64_OFFSET) {
+            // FIXME: Supply not possible yet
+
             // Supply to AAVE
             uint64 amountToLend = roundAmount - INT64_OFFSET;
             AaveAdapter.supplyToAave(asset, AAVE_POOL_ADDRESS, amountToLend);

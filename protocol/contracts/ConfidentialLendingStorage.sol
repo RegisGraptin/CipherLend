@@ -56,4 +56,6 @@ abstract contract ConfidentialLendingStorage {
 
     /// @notice User reward index to compute lending reward.
     mapping(address account => uint64 index) internal _userRewardIndex;
+
+    mapping(address account => mapping(uint256 roundIndex => euint64 eAmount)) public eAmountToWithdraw;
 }
