@@ -1,12 +1,4 @@
-# FHEVM Hardhat Template
-
-A Hardhat-based template for developing Fully Homomorphic Encryption (FHE) enabled Solidity smart contracts using the
-FHEVM protocol by Zama.
-
-## Quick Start
-
-For detailed instructions see:
-[FHEVM Hardhat Quick Start Tutorial](https://docs.zama.ai/protocol/solidity-guides/getting-started/quick-start-tutorial)
+# Confidential Lending Protocol using FHEVN
 
 ### Prerequisites
 
@@ -17,65 +9,40 @@ For detailed instructions see:
 
 1. **Install dependencies**
 
-   ```bash
-   npm install
-   ```
+```bash
+npm install
+```
 
 2. **Set up environment variables**
 
-   ```bash
-   npx hardhat vars set MNEMONIC
+```bash
+npx hardhat vars set MNEMONIC
 
-   # Set your Infura API key for network access
-   npx hardhat vars set INFURA_API_KEY
+# Set your Infura API key for network access
+npx hardhat vars set INFURA_API_KEY
 
-   # Optional: Set Etherscan API key for contract verification
-   npx hardhat vars set ETHERSCAN_API_KEY
-   ```
+# Optional: Set Etherscan API key for contract verification
+npx hardhat vars set ETHERSCAN_API_KEY
+```
 
 3. **Compile and test**
 
-   ```bash
-   npm run compile
-   npm run test
-   ```
-
-4. **Deploy to local network**
-
-   ```bash
-   # Start a local FHEVM-ready node
-   npx hardhat node
-   # Deploy to local network
-   npx hardhat deploy --network localhost
-   ```
-
-5. **Deploy to Sepolia Testnet**
-
-   ```bash
-   # Deploy to Sepolia
-   npx hardhat deploy --network sepolia
-   # Verify contract on Etherscan
-   npx hardhat verify --network sepolia <CONTRACT_ADDRESS>
-   ```
-
-6. **Test on Sepolia Testnet**
-
-   ```bash
-   # Once deployed, you can run a simple test on Sepolia.
-   npx hardhat test --network sepolia
-   ```
-
-## 📁 Project Structure
-
+```bash
+npm run compile
+npm run test
 ```
-fhevm-hardhat-template/
-├── contracts/           # Smart contract source files
-│   └── FHECounter.sol   # Example FHE counter contract
-├── deploy/              # Deployment scripts
-├── tasks/               # Hardhat custom tasks
-├── test/                # Test files
-├── hardhat.config.ts    # Hardhat configuration
-└── package.json         # Dependencies and scripts
+
+4. **Deploy to Sepolia Testnet**
+
+```bash
+# Deploy to Sepolia
+npx hardhat deploy --network sepolia
+# Deploy USDC Wrapper specifically
+npx hardhat deploy --tags USDCWrapper --network sepolia
+# Deploy ConfidentialLending (depends on USDCWrapper)
+npx hardhat deploy --tags ConfidentialLending --network sepolia
+# Verify contract on Etherscan
+npx hardhat verify --network sepolia <CONTRACT_ADDRESS>
 ```
 
 ## 📜 Available Scripts
@@ -88,23 +55,12 @@ fhevm-hardhat-template/
 | `npm run lint`     | Run linting checks       |
 | `npm run clean`    | Clean build artifacts    |
 
-## 📚 Documentation
+## AAVE Protocol Addresses
 
-- [FHEVM Documentation](https://docs.zama.ai/fhevm)
-- [FHEVM Hardhat Setup Guide](https://docs.zama.ai/protocol/solidity-guides/getting-started/setup)
-- [FHEVM Testing Guide](https://docs.zama.ai/protocol/solidity-guides/development-guide/hardhat/write_test)
-- [FHEVM Hardhat Plugin](https://docs.zama.ai/protocol/solidity-guides/development-guide/hardhat)
+https://github.com/bgd-labs/aave-address-book/blob/main/src/AaveV3Sepolia.sol
 
-## 📄 License
+Pool address: `0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951`
 
-This project is licensed under the BSD-3-Clause-Clear License. See the [LICENSE](LICENSE) file for details.
+https://sepolia.etherscan.io/address/0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8
 
-## 🆘 Support
-
-- **GitHub Issues**: [Report bugs or request features](https://github.com/zama-ai/fhevm/issues)
-- **Documentation**: [FHEVM Docs](https://docs.zama.ai)
-- **Community**: [Zama Discord](https://discord.gg/zama)
-
----
-
-**Built with ❤️ by the Zama team**
+USDC address: `0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8`
