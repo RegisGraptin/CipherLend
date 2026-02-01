@@ -15,22 +15,29 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { useBalance, useConnection, usePublicClient, useWriteContract } from "wagmi";
+import { useAccount, usePublicClient, useWriteContract } from "wagmi";
 import { parseUnits, erc20Abi, Address } from "viem";
 import { PROTOCOL } from "@/lib/protocol";
 import { useUSDCBalance } from "@/lib/hooks/useTokenBalance";
+import { useFhevm } from "@/lib/fhevm-sdk/react";
 
 export function ShieldingBridge() {
   const [privacyLoading, setPrivacyLoading] = useState(false);
   const [swapAmount, setSwapAmount] = useState("");
   const [revealEncrypted, setRevealEncrypted] = useState(false);
-  const { address:userAddress } = useConnection();
+  const { address: userAddress } = useAccount();
   const publicClient = usePublicClient();
   const { mutateAsync } = useWriteContract();
   const cUsdcDecrypted = "1,234.56";
   const encryptedPlaceholder = "✶✶✶✶✶✶✶✶";
   
   const { formattedAmount: usdcFormattedAmount } = useUSDCBalance(userAddress);
+
+  const { instance: fhevm, status: fheStatus } = useFhevm({
+    provider: typeof window !== "undefined" ? (window as any).ethereum : undefined,
+    chainId: PROTOCOL.chainId,
+    enabled: true,
+  });
 
 
   const handleShield = async () => {
