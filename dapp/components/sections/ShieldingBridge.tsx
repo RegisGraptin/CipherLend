@@ -106,7 +106,7 @@ export function ShieldingBridge() {
               USDC Balance
             </p>
             <div className="mt-2 flex items-center justify-between">
-              <p className="text-3xl font-semibold text-white">{usdcBalance}</p>
+              <p className="text-3xl font-mono font-semibold text-white">{usdcBalance}</p>
               <Badge className="border-[#2775CA]/40 bg-[#2775CA]/10 text-[#2775CA]">USDC</Badge>
             </div>
           </div>
