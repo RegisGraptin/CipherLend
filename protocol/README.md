@@ -11,19 +11,13 @@
 
 ```bash
 npm install
+
+git submodule update --init --recursive lib/aave-v3-origin
 ```
 
 2. **Set up environment variables**
 
-```bash
-npx hardhat vars set MNEMONIC
-
-# Set your Infura API key for network access
-npx hardhat vars set INFURA_API_KEY
-
-# Optional: Set Etherscan API key for contract verification
-npx hardhat vars set ETHERSCAN_API_KEY
-```
+Copy/Paste the `.env.example` file.
 
 3. **Compile and test**
 

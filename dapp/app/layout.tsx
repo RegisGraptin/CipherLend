@@ -25,15 +25,12 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const cookieStore = await cookies();
-  const cookieValue = cookieStore.toString();
-
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <WalletProvider cookies={cookieValue}>
+        <WalletProvider>
           {children}
         </WalletProvider>
       </body>
