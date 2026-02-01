@@ -25,14 +25,20 @@ async function deployMocksFixture(tokenName: string = "USDC", decimals: number =
   return { mockERC20, mockERC20Address, confidentialERC7984, confidentialERC7984Address };
 }
 
-async function deployConfidentialLendingFixture(
-  signers: Signers,
-  confidentialERC7984Address: string,
-) {
+async function deployConfidentialLendingFixture(signers: Signers, confidentialERC7984Address: string) {
   // For now, use a dummy AAVE pool address since we're just testing deployment
   const dummyAavePool = signers.alice.address;
 
-  const confidentialLendingFactory = await ethers.getContractFactory("ConfidentialLending");
+  // Deploy AaveAdapter library first
+  const aaveAdapterFactory = await ethers.getContractFactory("AaveAdapter");
+  const aaveAdapter = await aaveAdapterFactory.deploy();
+  const aaveAdapterAddress = await aaveAdapter.getAddress();
+
+  const confidentialLendingFactory = await ethers.getContractFactory("ConfidentialLending", {
+    libraries: {
+      AaveAdapter: aaveAdapterAddress,
+    },
+  });
   const confidentialLending = await confidentialLendingFactory.deploy(
     dummyAavePool,
     confidentialERC7984Address,
@@ -59,7 +65,6 @@ async function mintConfidentialTokenToUser(
   await wrapTx.wait();
 }
 
-
 describe("ConfidentialLending", function () {
   let signers: Signers;
   let mockUSDC: ERC20Mock;
@@ -81,7 +86,12 @@ describe("ConfidentialLending", function () {
       this.skip();
     }
 
-    ({ mockERC20: mockUSDC, mockERC20Address: mockUSDCAddress, confidentialERC7984: confidentialCUSDC, confidentialERC7984Address: confidentialCUSDCAddress } = await deployMocksFixture());
+    ({
+      mockERC20: mockUSDC,
+      mockERC20Address: mockUSDCAddress,
+      confidentialERC7984: confidentialCUSDC,
+      confidentialERC7984Address: confidentialCUSDCAddress,
+    } = await deployMocksFixture());
     ({ confidentialLending, confidentialLendingAddress } = await deployConfidentialLendingFixture(
       signers,
       confidentialCUSDCAddress,
@@ -108,8 +118,9 @@ describe("ConfidentialLending", function () {
 
     const transferTx = await confidentialCUSDC
       .connect(signers.alice)
-      ["confidentialTransferAndCall(address,bytes32,bytes,bytes)"]
-      (confidentialLendingAddress, encryptedAmount.handles[0], encryptedAmount.inputProof, "0x");
+      [
+        "confidentialTransferAndCall(address,bytes32,bytes,bytes)"
+      ](confidentialLendingAddress, encryptedAmount.handles[0], encryptedAmount.inputProof, "0x");
     await transferTx.wait();
 
     const encryptedLendingBalance = await confidentialLending.confidentialBalanceOf(signers.alice.address);
@@ -125,7 +136,11 @@ describe("ConfidentialLending", function () {
 
   it("other tokens should not increase confidential lending balance", async function () {
     const amountToMint = 1000n;
-    const { mockERC20: mockDAI, confidentialERC7984: confidentialCDAI, confidentialERC7984Address: confidentialCDAIAddress } = await deployMocksFixture("DAI", 18);
+    const {
+      mockERC20: mockDAI,
+      confidentialERC7984: confidentialCDAI,
+      confidentialERC7984Address: confidentialCDAIAddress,
+    } = await deployMocksFixture("DAI", 18);
     await mintConfidentialTokenToUser(signers.alice, amountToMint, mockDAI, confidentialCDAI);
 
     const formattedAmount = parseUnits(amountToMint.toString(), 6);
@@ -138,8 +153,9 @@ describe("ConfidentialLending", function () {
 
     const transferTx = await confidentialCDAI
       .connect(signers.alice)
-      ["confidentialTransferAndCall(address,bytes32,bytes,bytes)"]
-      (confidentialLendingAddress, encryptedAmount.handles[0], encryptedAmount.inputProof, "0x");
+      [
+        "confidentialTransferAndCall(address,bytes32,bytes,bytes)"
+      ](confidentialLendingAddress, encryptedAmount.handles[0], encryptedAmount.inputProof, "0x");
     await transferTx.wait();
 
     // Verify alice still has her confidential DAI (refunded)

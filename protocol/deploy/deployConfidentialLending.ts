@@ -12,9 +12,18 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const usdcWrapper = await hre.deployments.get("USDCWrapper");
   const WRAPPER_ADDRESS = usdcWrapper.address;
 
+  // Deploy AaveAdapter library first
+  const deployedAaveAdapter = await deploy("AaveAdapter", {
+    from: deployer,
+    log: true,
+  });
+
   const deployedConfidentialLending = await deploy("ConfidentialLending", {
     from: deployer,
     args: [AAVE_POOL_ADDRESS, WRAPPER_ADDRESS, "Confidential Lending USDC", "clUSDC"],
+    libraries: {
+      AaveAdapter: deployedAaveAdapter.address,
+    },
     log: true,
   });
 
