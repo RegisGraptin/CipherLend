@@ -15,22 +15,55 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { useBalance, useConnection, usePublicClient, useWriteContract } from "wagmi";
+import { parseUnits, erc20Abi, Address } from "viem";
+import { PROTOCOL } from "@/lib/protocol";
+import { useUSDCBalance } from "@/lib/hooks/useTokenBalance";
 
 export function ShieldingBridge() {
   const [privacyLoading, setPrivacyLoading] = useState(false);
   const [swapAmount, setSwapAmount] = useState("");
   const [revealEncrypted, setRevealEncrypted] = useState(false);
-  const usdcBalance = "1,234.56";
+  const { address:userAddress } = useConnection();
+  const publicClient = usePublicClient();
+  const { mutateAsync } = useWriteContract();
   const cUsdcDecrypted = "1,234.56";
   const encryptedPlaceholder = "✶✶✶✶✶✶✶✶";
+  
+  const { formattedAmount: usdcFormattedAmount } = useUSDCBalance(userAddress);
 
-  const handleSwap = () => {
-    if (!swapAmount) return;
-    setPrivacyLoading(true);
-    setTimeout(() => {
-      setPrivacyLoading(false);
+
+  const handleShield = async () => {
+    try {
+      if (!userAddress) return;
+      const amountStr = swapAmount.trim();
+      if (!amountStr || Number(amountStr) <= 0) return;
+
+      setPrivacyLoading(true);
+      const amount = parseUnits(amountStr, PROTOCOL.decimals.USDC);
+
+      const approveHash = await mutateAsync({
+        address: PROTOCOL.address.USDC,
+        abi: erc20Abi,
+        functionName: "approve",
+        args: [PROTOCOL.address.cUSDC, amount]
+      });
+      await publicClient!.waitForTransactionReceipt({ hash: approveHash });
+
+      const wrapHash = await mutateAsync({
+        address: PROTOCOL.address.cUSDC,
+        abi: PROTOCOL.abi.cUSDC as any,
+        functionName: "wrap",
+        args: [userAddress, amount]
+      });
+      await publicClient!.waitForTransactionReceipt({ hash: wrapHash });
+
       setSwapAmount("");
-    }, 2200);
+    } catch (err) {
+      console.error("Shield failed:", err);
+    } finally {
+      setPrivacyLoading(false);
+    }
   };
 
   return (
@@ -86,8 +119,8 @@ export function ShieldingBridge() {
         </CardContent>
         <CardFooter className="flex items-center justify-between gap-4">
           <Button variant="outline">View Bridge Params</Button>
-          <Button onClick={handleSwap}>
-            {privacyLoading ? "Shielding" : "Swap to cTokens"}
+          <Button onClick={handleShield} disabled={!swapAmount || !userAddress || privacyLoading}>
+            {privacyLoading ? "Shielding..." : "Shield"}
           </Button>
         </CardFooter>
       </Card>
@@ -106,7 +139,7 @@ export function ShieldingBridge() {
               USDC Balance
             </p>
             <div className="mt-2 flex items-center justify-between">
-              <p className="text-3xl font-mono font-semibold text-white">{usdcBalance}</p>
+              <p className="text-3xl font-mono font-semibold text-white">{usdcFormattedAmount || "0.0"}</p>
               <Badge className="border-[#2775CA]/40 bg-[#2775CA]/10 text-[#2775CA]">USDC</Badge>
             </div>
           </div>
