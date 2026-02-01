@@ -5,4 +5,5 @@ ignoredBuiltDependencies:
 onlyBuiltDependencies:
   - '@reown/appkit'
   - bufferutil
+  - keccak
   - utf-8-validate
