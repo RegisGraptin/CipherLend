@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Shield, Lock, CircleDollarSign } from "lucide-react";
+import { Shield, Lock, CircleDollarSign, CheckCircle, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 import { Button } from "@/components/ui/button";
@@ -28,15 +28,17 @@ import { GenericStringInMemoryStorage } from "@/lib/fhevm-sdk/storage/GenericStr
 
 export function ShieldingBridge() {
   const [privacyLoading, setPrivacyLoading] = useState(false);
-  const [swapAmount, setSwapAmount] = useState("");
+  const [swapAmountRaw, setSwapAmountRaw] = useState("");
+  const amountInputRef = useRef<HTMLInputElement | null>(null);
   const [revealEncrypted, setRevealEncrypted] = useState(false);
+  const [shieldStage, setShieldStage] = useState<"idle" | "approving" | "wrapping" | "done">("idle");
   const { address: userAddress } = useConnection();
   const publicClient = usePublicClient();
   const { mutateAsync } = useWriteContract();
   const [cUsdcDecrypted, setCUsdcDecrypted] = useState<string>("");
   const encryptedPlaceholder = "✶✶✶✶✶✶✶✶";
   
-  const { formattedAmount: usdcFormattedAmount } = useUSDCBalance(userAddress);
+  const { formattedAmount: usdcFormattedAmount, data: usdcRaw } = useUSDCBalance(userAddress);
   const { data: cUsdcEncrypted, refetch: refetchConfidentialBalance } = useConfidentialBalance(userAddress as any);
 
   const { instance: fhevm, status: fheStatus, error } = useFhevm({
@@ -89,10 +91,12 @@ export function ShieldingBridge() {
   const handleShield = async () => {
     try {
       if (!userAddress) return;
-      const amountStr = swapAmount.trim();
+      let amountStr = swapAmountRaw.trim();
+      if (amountStr.endsWith(".")) amountStr = amountStr.slice(0, -1);
       if (!amountStr || Number(amountStr) <= 0) return;
 
       setPrivacyLoading(true);
+      setShieldStage("approving");
       const amount = parseUnits(amountStr, PROTOCOL.decimals.USDC);
 
       const approveHash = await mutateAsync({
@@ -103,6 +107,7 @@ export function ShieldingBridge() {
       });
       await publicClient!.waitForTransactionReceipt({ hash: approveHash });
 
+      setShieldStage("wrapping");
       const wrapHash = await mutateAsync({
         address: PROTOCOL.address.cUSDC,
         abi: PROTOCOL.abi.cUSDC as any,
@@ -112,13 +117,12 @@ export function ShieldingBridge() {
       await publicClient!.waitForTransactionReceipt({ hash: wrapHash });
 
       // Refresh encrypted cUSDC balance and reset decrypted view
-      if (refetchConfidentialBalance) {
-        await refetchConfidentialBalance();
-      }
+      await refetchConfidentialBalance();
       setRevealEncrypted(false);
       setCUsdcDecrypted("");
+      setShieldStage("done");
 
-      setSwapAmount("");
+      setSwapAmountRaw("");
     } catch (err) {
       console.error("Shield failed:", err);
     } finally {
@@ -126,67 +130,125 @@ export function ShieldingBridge() {
     }
   };
 
+  const normalizeAmountInput = (v: string) => {
+    const decimals = PROTOCOL.decimals.USDC ?? 6;
+    let s = v.replace(/,/g, "").replace(/[^\d.]/g, "");
+    const parts = s.split(".");
+    const intPart = (parts[0] || "").replace(/^0+(?=\d)/, "");
+    let fracPart = parts[1] || "";
+    if (fracPart.length > decimals) fracPart = fracPart.slice(0, decimals);
+    if (parts.length > 1) return `${intPart || "0"}.${fracPart}`;
+    return intPart;
+  };
+
+  const prettyAmount = (raw: string) => {
+    if (!raw) return "";
+    const [i, f] = raw.split(".");
+    const intNum = Number(i || "0");
+    const intFmt = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(
+      Number.isFinite(intNum) ? intNum : 0
+    );
+    return f !== undefined ? `${intFmt}.${f}` : intFmt;
+  };
+
   return (
     <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
       <Card className="relative overflow-hidden">
         <CardHeader>
-          <CardTitle>The Shielding Bridge</CardTitle>
+          <CardTitle>Shield Assets</CardTitle>
           <CardDescription>
-            Wrap public tokens into FHE-encrypted cTokens for private operations.
+            Shield USDC into cUSDC for confidential transfers using FHE.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
           <div className="space-y-2">
             <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">
-              Public Token Amount
+              Amount to Shield
             </p>
-            <Input
-              placeholder="Enter amount to shield"
-              value={swapAmount}
-              onChange={(event) => setSwapAmount(event.target.value)}
-            />
+            <div
+              className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/40 px-4 py-4 text-sm text-zinc-300 cursor-text"
+              onClick={() => amountInputRef.current?.focus()}
+            >
+              <div className="flex flex-1 items-center gap-3 min-w-0">
+                <img src="/usdc.svg" alt="USDC" className="h-5 w-5" />
+                <Input
+                  placeholder="0.00"
+                  value={prettyAmount(swapAmountRaw)}
+                  onChange={(event) => {
+                    setShieldStage("idle");
+                    setSwapAmountRaw(normalizeAmountInput(event.target.value));
+                  }}
+                  inputMode="decimal"
+                  ref={amountInputRef}
+                  aria-label="Amount to shield"
+                  className="h-auto w-full flex-1 min-w-0 border-none bg-transparent p-0 text-2xl font-mono text-white shadow-none focus:outline-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge className="border-[#2775CA]/40 bg-[#2775CA]/10 text-[#2775CA]">USDC</Badge>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const base = usdcRaw ? formatUnits(usdcRaw as bigint, PROTOCOL.decimals.USDC) : "";
+                    setSwapAmountRaw(base);
+                  }}
+                >
+                  Max
+                </Button>
+              </div>
+            </div>
           </div>
-          <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-zinc-300">
-            <span>Output</span>
-            <span className="text-[#00FF94]">{swapAmount || "0.0"} cTokens</span>
+          <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/40 px-4 py-4 text-sm text-zinc-300">
+            <span className="text-zinc-400">You will receive</span>
+            <span className="text-2xl font-mono text-[#00FF94]">{formatAmount(swapAmountRaw || "0")} cUSDC</span>
           </div>
           <div className="rounded-2xl border border-[#00FF94]/20 bg-[#00FF94]/5 p-4 text-sm text-zinc-300">
             <p className="flex items-center gap-2 text-[#00FF94]">
               <Shield className="h-4 w-4" />
-              Privacy Loading Channel
+              Shielding Progress
             </p>
-            <div className="mt-3 flex items-center gap-3">
-              {[0, 1, 2].map((dot) => (
-                <motion.span
-                  key={dot}
-                  className="h-2 w-2 rounded-full bg-[#00FF94]"
-                  animate={{
-                    opacity: privacyLoading ? [0.2, 1, 0.2] : 0.3,
-                    scale: privacyLoading ? [0.9, 1.2, 0.9] : 1,
-                  }}
-                  transition={{
-                    duration: 0.9,
-                    repeat: privacyLoading ? Infinity : 0,
-                    delay: dot * 0.2,
-                  }}
-                />
-              ))}
-              <span className="text-xs text-zinc-400">
-                {privacyLoading ? "Privacy Loading..." : "Idle"}
-              </span>
+            <div className="mt-3 space-y-2">
+              {[
+                { key: "approving", label: "Approve USDC", icon: <CircleDollarSign className="h-4 w-4" /> },
+                { key: "wrapping", label: "Wrap to cUSDC", icon: <Shield className="h-4 w-4" /> },
+              ].map((step) => {
+                const currentOrder = { idle: -1, approving: 0, wrapping: 1, done: 2 } as const;
+                const statusOrder = currentOrder[shieldStage];
+                const stepOrder = currentOrder[step.key as keyof typeof currentOrder];
+                const isDone = statusOrder > stepOrder;
+                const isActive = statusOrder === stepOrder && privacyLoading;
+                return (
+                  <div key={step.key} className="flex items-center justify-between rounded-xl border border-white/10 bg-black/30 px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      {step.icon}
+                      <span>{step.label}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {isDone ? (
+                        <CheckCircle className="h-4 w-4 text-[#00FF94]" />
+                      ) : isActive ? (
+                        <Loader2 className="h-4 w-4 animate-spin text-zinc-400" />
+                      ) : (
+                        <span className="text-xs text-zinc-500">Pending</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </CardContent>
         <CardFooter className="flex items-center justify-end">
-          <Button onClick={handleShield} disabled={!swapAmount || !userAddress || privacyLoading}>
-            {privacyLoading ? "Shielding..." : "Shield"}
+          <Button onClick={handleShield} disabled={!swapAmountRaw || !userAddress || privacyLoading}>
+            {privacyLoading ? "Shielding..." : "Shield USDC"}
           </Button>
         </CardFooter>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Wallet Balances</CardTitle>
+          <CardTitle>Balances</CardTitle>
           <CardDescription>
             Public USDC vs encrypted cUSDC inside privacy vaults.
           </CardDescription>
@@ -242,7 +304,7 @@ export function ShieldingBridge() {
           {!revealEncrypted && (
             <Button variant="outline" onClick={handleDecrypt} disabled={isDecrypting || !cUsdcEncrypted || fheStatus !== "ready"}>
               <Lock className="h-4 w-4" />
-              {isDecrypting ? "Decrypting..." : "Decrypt"}
+              {isDecrypting ? "Revealing..." : "Reveal Balance"}
             </Button>
           )}
         </CardFooter>

@@ -24,9 +24,9 @@ export default function Home() {
             </div>
             <div>
               <p className="text-sm uppercase tracking-[0.35em] text-zinc-500">
-                CipherAave
+                Cipher Lend
               </p>
-              <h1 className="text-2xl font-semibold">Cyber-Noir Privacy Suite</h1>
+              <h1 className="text-2xl font-semibold">Confidential DeFi Lending</h1>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -40,9 +40,9 @@ export default function Home() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
-            <TabsTrigger value="shield">Shielding Bridge</TabsTrigger>
-            <TabsTrigger value="lending">Command Deck</TabsTrigger>
-            <TabsTrigger value="portfolio">Private Portfolio</TabsTrigger>
+            <TabsTrigger value="shield">Shield Assets</TabsTrigger>
+            <TabsTrigger value="lending">Lend & Borrow</TabsTrigger>
+            <TabsTrigger value="portfolio">Confidential Portfolio</TabsTrigger>
           </TabsList>
         </Tabs>
 

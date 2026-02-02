@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CipherAave | Private Web3 Suite",
-  description: "Cyber-noir privacy tooling for FHE-wrapped assets and lending.",
+  title: "Cipher Lend — Confidential DeFi Lending with FHE",
+  description: "Shield USDC into encrypted cUSDC and lend/borrow privately using fully homomorphic encryption on Ethereum.",
 };
 
 export default async function RootLayout({

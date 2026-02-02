@@ -11,9 +11,9 @@ if (!projectId) {
 
 // Set up metadata
 const metadata = {
-  name: 'CipherAave',
+  name: 'Cipher Lend',
   description: 'Cyber-noir privacy tooling for FHE-wrapped assets and lending.',
-  url: 'https://cipheraave.xyz', // Update with your domain
+  url: 'https://cipherlend.xyz', // Update with your domain
   icons: ['https://avatars.githubusercontent.com/u/179229932']
 }
 
