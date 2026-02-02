@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Lock, CheckCircle, Loader2 } from "lucide-react";
+import { useRef, useState } from "react";
+import { CheckCircle, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -16,16 +16,16 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useConnection, usePublicClient, useWriteContract, useReadContract } from "wagmi";
-import { formatUnits, parseUnits } from "viem";
+import { parseUnits } from "viem";
 
 import { PROTOCOL } from "@/lib/protocol";
-import { useFHEDecrypt, useFhevm } from "@/lib/fhevm-sdk/react";
+import {  useFhevm } from "@/lib/fhevm-sdk/react";
 import { useFHEEncryption, toHex } from "@/lib/fhevm-sdk/react/useFHEEncryption";
-import { GenericStringInMemoryStorage } from "@/lib/fhevm-sdk/storage/GenericStringStorage";
 import { ethers } from "ethers";
-import { motion } from "framer-motion";
 import { formatAmount } from "@/lib/utils";
 import ConfidentialLendingABI from "@/lib/abis/ConfidentialLending.json" assert { type: "json" };
+import { Balance } from "./Balance";
+import { useConfidentialBalance } from "@/lib/hooks/useConfidentialBalance";
 
 export function LendingDeck() {
   const [activeTab, setActiveTab] = useState<"supply" | "withdraw">("supply");
@@ -33,59 +33,19 @@ export function LendingDeck() {
   const amountInputRef = useRef<HTMLInputElement | null>(null);
 
   const { address: userAddress } = useConnection();
-
-  // Encrypted lending token balance + reveal (from ConfidentialLending)
-  const { data: lendingEncryptedHandle, refetch } = useReadContract({
-    address: PROTOCOL.address.ConfidentialLending,
-    abi: ConfidentialLendingABI.abi as any,
-    functionName: "confidentialBalanceOf",
-    args: [userAddress as any],
-    query: { enabled: !!userAddress, refetchInterval: 5000 },
-  });
-  const [cUsdcDecrypted, setCUsdcDecrypted] = useState<string>("");
-  const [revealEncrypted, setRevealEncrypted] = useState(false);
+  const { refetch: refetchConfidentialBalance } = useConfidentialBalance(PROTOCOL.address.ConfidentialLending, userAddress as any);
+  
 
   const { instance: fhevm, status: fheStatus } = useFhevm({
     provider: typeof window !== "undefined" ? (window as any).ethereum : undefined,
     chainId: PROTOCOL.chainId,
   });
   const [signer, setSigner] = useState<ethers.JsonRpcSigner | undefined>(undefined);
-  const storage = new GenericStringInMemoryStorage();
 
   if (typeof window !== "undefined" && !signer && (window as any).ethereum) {
     const provider = new ethers.BrowserProvider((window as any).ethereum);
     provider.getSigner().then(setSigner).catch(() => {});
   }
-
-  const requests = lendingEncryptedHandle
-    ? [{ handle: lendingEncryptedHandle as string, contractAddress: PROTOCOL.address.ConfidentialLending }]
-    : [];
-
-  const { decrypt, isDecrypting, results } = useFHEDecrypt({
-    instance: fhevm,
-    ethersSigner: signer,
-    fhevmDecryptionSignatureStorage: storage,
-    chainId: PROTOCOL.chainId,
-    requests,
-  });
-
-  useEffect(() => {
-    if (!lendingEncryptedHandle) return;
-    const raw = (results as Record<string, unknown>)[lendingEncryptedHandle as string];
-    if (raw !== undefined) {
-      if (typeof raw === "bigint") {
-        const base = formatUnits(raw, PROTOCOL.decimals.cUSDC);
-        setCUsdcDecrypted(formatAmount(base));
-      } else if (typeof raw === "string") {
-        setCUsdcDecrypted(raw);
-      } else if (raw !== null) {
-        setCUsdcDecrypted(String(raw));
-      }
-      setRevealEncrypted(true);
-    }
-  }, [results, lendingEncryptedHandle]);
-
-  const handleDecrypt = async () => decrypt();
 
   const normalizeAmountInput = (v: string) => {
     const decimals = PROTOCOL.decimals.cUSDC ?? 6;
@@ -133,6 +93,9 @@ export function LendingDeck() {
       setIsSubmitting(true);
       setStage("submitting");
 
+      // Wait a second to display submitting state before freezing of the encryption
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
       const decimals = PROTOCOL.decimals.cUSDC ?? 6;
       let s = amountRaw.trim();
       if (s.endsWith(".")) s = s.slice(0, -1);
@@ -172,9 +135,7 @@ export function LendingDeck() {
       setStage("done");
       setAmountRaw("");
       // Refresh encrypted lending balance and reset reveal state
-      await refetch();
-      setRevealEncrypted(false);
-      setCUsdcDecrypted("");
+      refetchConfidentialBalance();
     } catch (e) {
       console.error("Lending action failed:", e);
     } finally {
@@ -315,56 +276,7 @@ export function LendingDeck() {
         </CardFooter>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Your Position</CardTitle>
-          <CardDescription>Encrypted cUSDC balance. Reveal on-device only.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="relative rounded-2xl border border-white/10 bg-black/40 p-4">
-            <p className="flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-zinc-500">
-              <Lock className="h-4 w-4" />
-              Encrypted cUSDC
-            </p>
-            <div className="mt-2 flex items-center justify-between">
-              <div className="relative overflow-hidden rounded-xl">
-                <motion.p
-                  className="relative z-10 font-mono text-3xl font-semibold text-[#00FF94]"
-                  animate={{ filter: revealEncrypted ? "blur(0px)" : "blur(8px)", opacity: revealEncrypted ? 1 : 0.8 }}
-                  transition={{ duration: 0.4 }}
-                >
-                  {revealEncrypted ? cUsdcDecrypted : "✶✶✶✶✶✶✶✶"}
-                </motion.p>
-                {!revealEncrypted && (
-                  <motion.div
-                    className="absolute inset-0"
-                    animate={{ opacity: [0.24, 0.36, 0.28, 0.4, 0.3] }}
-                    transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
-                    style={{
-                      backgroundImage:
-                        "radial-gradient(circle at 20% 20%, rgba(0,255,148,0.08), transparent 35%), radial-gradient(circle at 80% 60%, rgba(0,255,148,0.06), transparent 45%), repeating-linear-gradient(135deg, rgba(255,255,255,0.04) 0px, rgba(255,255,255,0.04) 2px, transparent 2px, transparent 4px)",
-                    }}
-                  />
-                )}
-              </div>
-              <Badge>cUSDC</Badge>
-            </div>
-            <div className="mt-2 flex items-center justify-between">
-              <p className="text-xs text-zinc-500">
-                {revealEncrypted ? "Decrypted" : "Encrypted • Privacy Mask Active"}
-              </p>
-            </div>
-          </div>
-        </CardContent>
-        <CardFooter className="flex items-center justify-end gap-4">
-          {!revealEncrypted && (
-            <Button variant="outline" onClick={handleDecrypt} disabled={isDecrypting || !lendingEncryptedHandle || fheStatus !== "ready"}>
-              <Lock className="h-4 w-4" />
-              {isDecrypting ? "Revealing..." : "Reveal Balance"}
-            </Button>
-          )}
-        </CardFooter>
-      </Card>
+      <Balance />
     </div>
   );
 }

@@ -40,7 +40,7 @@ export default function Home() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
             <TabsTrigger value="shield">Shield Assets</TabsTrigger>
-            <TabsTrigger value="lending">Lend & Borrow</TabsTrigger>
+            <TabsTrigger value="lending">Lend</TabsTrigger>
             <TabsTrigger value="portfolio">Confidential Portfolio</TabsTrigger>
           </TabsList>
         </Tabs>
