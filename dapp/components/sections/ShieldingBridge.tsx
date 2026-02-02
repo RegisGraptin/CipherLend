@@ -162,15 +162,30 @@ export function ShieldingBridge() {
         </CardHeader>
         <CardContent className="space-y-5">
           <div className="space-y-2">
-            <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">
-              Amount to Shield
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">
+                Amount to Shield
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={() => {
+                  const base = usdcRaw ? formatUnits(usdcRaw as bigint, PROTOCOL.decimals.USDC) : "";
+                  setSwapAmountRaw(base);
+                }}
+              >
+                Max
+              </Button>
+            </div>
             <div
               className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/40 px-4 py-4 text-sm text-zinc-300 cursor-text"
               onClick={() => amountInputRef.current?.focus()}
             >
-              <div className="flex flex-1 items-center gap-3 min-w-0">
+              <div className="flex items-center gap-2">
                 <img src="/usdc.svg" alt="USDC" className="h-5 w-5" />
+              </div>
+              <div className="flex flex-1 items-center min-w-0 justify-end gap-2">
                 <Input
                   placeholder="0.00"
                   value={prettyAmount(swapAmountRaw)}
@@ -181,27 +196,18 @@ export function ShieldingBridge() {
                   inputMode="decimal"
                   ref={amountInputRef}
                   aria-label="Amount to shield"
-                  className="h-auto w-full flex-1 min-w-0 border-none bg-transparent p-0 text-2xl font-mono text-white shadow-none focus:outline-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                  className="h-10 w-full flex-1 min-w-0 border-none bg-transparent p-0 text-2xl leading-none font-mono text-white text-right shadow-none focus:outline-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
                 />
-              </div>
-              <div className="flex items-center gap-2">
                 <Badge className="border-[#2775CA]/40 bg-[#2775CA]/10 text-[#2775CA]">USDC</Badge>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const base = usdcRaw ? formatUnits(usdcRaw as bigint, PROTOCOL.decimals.USDC) : "";
-                    setSwapAmountRaw(base);
-                  }}
-                >
-                  Max
-                </Button>
               </div>
             </div>
           </div>
           <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/40 px-4 py-4 text-sm text-zinc-300">
             <span className="text-zinc-400">You will receive</span>
-            <span className="text-2xl font-mono text-[#00FF94]">{formatAmount(swapAmountRaw || "0")} cUSDC</span>
+            <div className="flex items-center gap-2">
+              <span className="text-2xl font-mono text-[#00FF94]">{formatAmount(swapAmountRaw || "0")}</span>
+              <Badge className="border-[#00FF94]/40 bg-[#00FF94]/10 text-[#00FF94] px-3">cUSDC</Badge>
+            </div>
           </div>
           <div className="rounded-2xl border border-[#00FF94]/20 bg-[#00FF94]/5 p-4 text-sm text-zinc-300">
             <p className="flex items-center gap-2 text-[#00FF94]">
