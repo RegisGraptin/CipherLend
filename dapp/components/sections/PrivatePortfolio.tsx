@@ -13,9 +13,39 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useConnection, useReadContract } from "wagmi";
+import { Address, erc20Abi, formatUnits } from "viem";
+import { PROTOCOL } from "@/lib/protocol";
+import { formatAmount } from "@/lib/utils";
+import AaveAdapter from "@/lib/abis/AaveAdapter.json" assert { type: "json" };
+import { useBalance } from "@/lib/hooks/useTokenBalance";
 
 export function PrivatePortfolio() {
   const [revealBalance, setRevealBalance] = useState(false);
+
+  // Public USDC wallet balance (user)
+  const { formattedAmount: usdcFormatted } = useBalance(PROTOCOL.address.USDC, PROTOCOL.address.ConfidentialLending);
+
+  // Fetch aUSDC token address from AAVE for underlying USDC via adapter
+  const { data: aTokenAddress } = useReadContract({
+    address: AaveAdapter.address as Address,
+    abi: AaveAdapter.abi as any,
+    functionName: "fetchAssets",
+    args: [PROTOCOL.address.AAVEPool, PROTOCOL.address.USDC],
+    query: { enabled: !!PROTOCOL.address.AAVEPool && !!PROTOCOL.address.USDC },
+  });
+
+  // Protocol-held aUSDC balance (ConfidentialLending supplies on-chain)
+  const { data: aUSDCBalanceRaw } = useReadContract({
+    address: (aTokenAddress || "0x0000000000000000000000000000000000000000") as Address,
+    abi: erc20Abi,
+    functionName: "balanceOf",
+    args: [PROTOCOL.address.ConfidentialLending],
+    query: { enabled: !!aTokenAddress },
+  });
+
+  const aUSDCBase = aUSDCBalanceRaw ? formatUnits(aUSDCBalanceRaw as bigint, PROTOCOL.decimals.USDC) : undefined;
+  const aUSDCFormatted = aUSDCBase ? formatAmount(aUSDCBase, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : undefined;
 
   return (
     <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
@@ -64,19 +94,22 @@ export function PrivatePortfolio() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Stealth Signals</CardTitle>
-          <CardDescription>
-            Private performance feed masked behind the view key.
-          </CardDescription>
+          <CardTitle>Underlying Balances</CardTitle>
+          <CardDescription>Wallet USDC and Aave supply (aUSDC).</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="rounded-2xl border border-white/10 bg-black/40 p-4">
-            <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">Risk Tier</p>
-            <p className="mt-2 text-2xl font-semibold text-white">Phantom</p>
+            <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">USDC (Wallet)</p>
+            <p className="mt-2 text-2xl font-semibold text-white font-mono">
+              {usdcFormatted ?? "—"}
+            </p>
           </div>
           <div className="rounded-2xl border border-white/10 bg-black/40 p-4">
-            <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">Privacy Score</p>
-            <p className="mt-2 text-sm text-zinc-300">98% shielded coverage across positions.</p>
+            <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">aUSDC (Supplied via Protocol)</p>
+            <p className="mt-2 text-2xl font-semibold text-white font-mono">
+              {aUSDCFormatted ?? (aTokenAddress ? "—" : "Resolving aUSDC...")}
+            </p>
+            <p className="mt-2 text-xs text-zinc-500">Source: AAVE Pool on {PROTOCOL.chainId}</p>
           </div>
         </CardContent>
       </Card>

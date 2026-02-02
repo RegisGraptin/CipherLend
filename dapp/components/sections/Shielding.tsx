@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { useConnection, usePublicClient, useWriteContract } from "wagmi";
 import { parseUnits, erc20Abi } from "viem";
 import { PROTOCOL } from "@/lib/protocol";
-import { useUSDCBalance } from "@/lib/hooks/useTokenBalance";
+import { useBalance } from "@/lib/hooks/useTokenBalance";
 import { useConfidentialBalance } from "@/lib/hooks/useConfidentialBalance";
 import { ethers } from "ethers";
 import { formatUnits } from "viem";
@@ -34,7 +34,7 @@ export function Shielding() {
   const publicClient = usePublicClient();
   const { mutateAsync } = useWriteContract();
   
-  const { data: usdcRaw } = useUSDCBalance(userAddress);
+  const { data: usdcRaw } = useBalance(PROTOCOL.address.USDC, userAddress);
   const { refetch: refetchConfidentialBalance } = useConfidentialBalance(PROTOCOL.address.cUSDC, userAddress as any);
 
 

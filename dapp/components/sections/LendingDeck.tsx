@@ -15,7 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useConnection, usePublicClient, useWriteContract, useReadContract } from "wagmi";
+import { useConnection, usePublicClient, useWriteContract } from "wagmi";
 import { parseUnits } from "viem";
 
 import { PROTOCOL } from "@/lib/protocol";
@@ -23,9 +23,9 @@ import {  useFhevm } from "@/lib/fhevm-sdk/react";
 import { useFHEEncryption, toHex } from "@/lib/fhevm-sdk/react/useFHEEncryption";
 import { ethers } from "ethers";
 import { formatAmount } from "@/lib/utils";
-import ConfidentialLendingABI from "@/lib/abis/ConfidentialLending.json" assert { type: "json" };
 import { Balance } from "./Balance";
 import { useConfidentialBalance } from "@/lib/hooks/useConfidentialBalance";
+import { useATokenAddress, useBalance } from "@/lib/hooks/useTokenBalance";
 
 export function LendingDeck() {
   const [activeTab, setActiveTab] = useState<"supply" | "withdraw">("supply");
@@ -34,7 +34,10 @@ export function LendingDeck() {
 
   const { address: userAddress } = useConnection();
   const { refetch: refetchConfidentialBalance } = useConfidentialBalance(PROTOCOL.address.ConfidentialLending, userAddress as any);
-  
+  const { data: aTokenAddress } = useATokenAddress();
+  const { data: aTokenBalance } = useBalance(aTokenAddress as `0x${string}`, userAddress);
+
+
 
   const { instance: fhevm, status: fheStatus } = useFhevm({
     provider: typeof window !== "undefined" ? (window as any).ethereum : undefined,
@@ -125,7 +128,7 @@ export function LendingDeck() {
 
         const txHash = await mutateAsync({
           address: PROTOCOL.address.ConfidentialLending,
-          abi: ConfidentialLendingABI.abi as any,
+          abi: PROTOCOL.abi.ConfidentialLending,
           functionName: "requestWithdraw",
           args: [toHex(enc.handles[0]), toHex(enc.inputProof)],
         });

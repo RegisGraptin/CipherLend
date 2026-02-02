@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/card";
 import { useConnection } from "wagmi";
 import { PROTOCOL } from "@/lib/protocol";
-import { useUSDCBalance } from "@/lib/hooks/useTokenBalance";
+import { useBalance } from "@/lib/hooks/useTokenBalance";
 import { useConfidentialBalance } from "@/lib/hooks/useConfidentialBalance";
 import { useFHEDecrypt, useFhevm } from "@/lib/fhevm-sdk/react";
 import { ethers } from "ethers";
@@ -25,7 +25,7 @@ import { GenericStringInMemoryStorage } from "@/lib/fhevm-sdk/storage/GenericStr
 
 export function Balance() {
   const { address: userAddress } = useConnection();
-  const { formattedAmount: usdcFormattedAmount } = useUSDCBalance(userAddress);
+  const { formattedAmount: usdcFormattedAmount } = useBalance(PROTOCOL.address.USDC, userAddress);
   const { data: cUsdcEncrypted } = useConfidentialBalance(PROTOCOL.address.cUSDC, userAddress as any);
   const { data: lcUsdcEncrypted } = useConfidentialBalance(PROTOCOL.address.ConfidentialLending, userAddress as any);
 
