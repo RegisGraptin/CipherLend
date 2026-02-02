@@ -4,9 +4,8 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Shield } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ShieldingBridge } from "@/components/sections/ShieldingBridge";
+import { Shielding } from "@/components/sections/Shielding";
 import { LendingDeck } from "@/components/sections/LendingDeck";
 import { PrivatePortfolio } from "@/components/sections/PrivatePortfolio";
 
@@ -56,7 +55,7 @@ export default function Home() {
               transition={{ duration: 0.4 }}
               className=""
             >
-              <ShieldingBridge />
+              <Shielding />
             </motion.div>
           )}
 

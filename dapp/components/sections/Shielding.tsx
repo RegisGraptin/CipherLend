@@ -20,14 +20,12 @@ import { parseUnits, erc20Abi } from "viem";
 import { PROTOCOL } from "@/lib/protocol";
 import { useUSDCBalance } from "@/lib/hooks/useTokenBalance";
 import { useConfidentialBalance } from "@/lib/hooks/useConfidentialBalance";
-import { useFHEDecrypt, useFhevm } from "@/lib/fhevm-sdk/react";
 import { ethers } from "ethers";
 import { formatUnits } from "viem";
 import { formatAmount } from "@/lib/utils";
-import { GenericStringInMemoryStorage } from "@/lib/fhevm-sdk/storage/GenericStringStorage";
 import { Balance } from "./Balance";
 
-export function ShieldingBridge() {
+export function Shielding() {
   const [privacyLoading, setPrivacyLoading] = useState(false);
   const [swapAmountRaw, setSwapAmountRaw] = useState("");
   const amountInputRef = useRef<HTMLInputElement | null>(null);
