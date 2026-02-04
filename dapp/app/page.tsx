@@ -7,7 +7,7 @@ import { Shield } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Shielding } from "@/components/sections/Shielding";
 import { LendingDeck } from "@/components/sections/LendingDeck";
-import { PrivatePortfolio } from "@/components/sections/PrivatePortfolio";
+import { ProtocolStatus } from "@/components/sections/ProtocolStatus";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState("shield");
@@ -41,7 +41,7 @@ export default function Home() {
           <TabsList>
             <TabsTrigger value="shield">Shield Assets</TabsTrigger>
             <TabsTrigger value="lending">Lend</TabsTrigger>
-            <TabsTrigger value="portfolio">Confidential Portfolio</TabsTrigger>
+            <TabsTrigger value="portfolio">Protocol Status</TabsTrigger>
           </TabsList>
         </Tabs>
 
@@ -81,7 +81,7 @@ export default function Home() {
               transition={{ duration: 0.4 }}
               className=""
             >
-              <PrivatePortfolio />
+              <ProtocolStatus />
             </motion.div>
           )}
         </AnimatePresence>
