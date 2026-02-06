@@ -5,10 +5,22 @@ import ConfidentialLending from "./abis/ConfidentialLending.json" assert { type:
 export const PROTOCOL = {
   chainId: CHAIN.sepolia,
   address: {
+    // Tokens
     USDC: contracts.USDC[CHAIN.sepolia] as `0x${string}`,
     cUSDC: contracts.cUSDC[CHAIN.sepolia] as `0x${string}`,
+
+    // Uniswap specific tokens (note different USDC addresses)
+    UniswapUSDC: contracts.Uniswap.USDC[CHAIN.sepolia] as `0x${string}`,
+    UniswapUNI: contracts.Uniswap.UNI[CHAIN.sepolia] as `0x${string}`,
+
+    // Protocol
     ConfidentialLending: contracts.ConfidentialLending[CHAIN.sepolia] as `0x${string}`,
-    AAVEPool: contracts.AAVEPool[CHAIN.sepolia] as `0x${string}`
+    ConfidentialSwap: contracts.ConfidentialSwap[CHAIN.sepolia] as `0x${string}`,
+    AAVEPool: contracts.AAVEPool[CHAIN.sepolia] as `0x${string}`,
+
+    UNISWAP_QUOTER: {
+      [CHAIN.sepolia]: "0x61b3f2011a92d183c7dbadbda940a7555ccf9227" as `0x${string}`,
+    },
   },
   abi: {
     cUSDC: cUSDC.abi,

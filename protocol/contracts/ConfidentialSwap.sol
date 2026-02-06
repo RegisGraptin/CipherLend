@@ -77,15 +77,22 @@ contract ConfidentialSwap is ZamaEthereumConfig, IERC7984Receiver {
     address public constant UNI = 0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984;
 
     /// Addresses of the confidential wrapper for the underlying asset
-    address cUSDC;
-    address cUNI;
+    address public cUSDC;
+    address public cUNI;
 
     // Swap USDC --> UNI
-    constructor(address router_, address poolManager_, address permit2_, address quoter_) {
+    constructor(
+        address router_,
+        address poolManager_,
+        address permit2_,
+        address quoter_,
+        address cUSDC_,
+        address cUNI_
+    ) {
         // Create confidential wrapper for USDC and UNI tokens
         // FIXME: Mock name is not right here
-        cUSDC = address(new ERC7984Mock(USDC));
-        cUNI = address(new ERC7984Mock(UNI));
+        cUSDC = cUSDC_;
+        cUNI = cUNI_;
 
         router = IUniversalRouter(router_);
         poolManager = IPoolManager(poolManager_);

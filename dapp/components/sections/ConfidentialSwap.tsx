@@ -14,12 +14,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Balance } from "./Balance";
-import { ProtocolStatus } from "./ProtocolStatus";
+import { SwapBalance } from "./SwapBalance";
 
 export function ConfidentialSwap() {
   const [swapAmount, setSwapAmount] = useState("");
   const [isSwapping, setIsSwapping] = useState(false);
+
+  // FIXME: Get Quote from Uniswap
+  // https://github.com/Uniswap/examples/blob/main/v3-sdk/quoting/src/libs/quote.ts
 
   const handleSwap = async () => {
     try {
