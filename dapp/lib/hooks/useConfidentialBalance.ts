@@ -8,7 +8,7 @@ export function useConfidentialBalance(
 ) {
   return useReadContract({
     address: contractAddress,
-    abi: PROTOCOL.abi.cUSDC,
+    abi: PROTOCOL.abi.cToken,
     functionName: "confidentialBalanceOf",
     args: [userAddress!],
     query: {

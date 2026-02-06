@@ -18,7 +18,7 @@ export function LendingDeck() {
   const [activeTab, setActiveTab] = useState<"supply" | "withdraw">("supply");
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
+    <div className="grid gap-8">
       <Card>
         <CardHeader>
           <CardTitle>Lend cUSDC</CardTitle>
@@ -34,6 +34,10 @@ export function LendingDeck() {
               Your action is an encrypted intent. It executes next round once at least 2 distinct users participate and 2 minutes have elapsed (test settings).
             </div>
 
+            <div className="mt-4 rounded-2xl border border-white/10 bg-black/40 p-3 text-xs text-zinc-400">
+              Warning it is using another kind of USDC here
+            </div>
+
             <TabsContent value="supply">
               <LendingSupply />
             </TabsContent>
@@ -45,8 +49,6 @@ export function LendingDeck() {
         </CardContent>
         
       </Card>
-
-      <Balance />
     </div>
   );
 }

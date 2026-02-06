@@ -20,10 +20,8 @@ import { parseUnits, erc20Abi } from "viem";
 import { PROTOCOL } from "@/lib/protocol";
 import { useBalance } from "@/lib/hooks/useTokenBalance";
 import { useConfidentialBalance } from "@/lib/hooks/useConfidentialBalance";
-import { ethers } from "ethers";
 import { formatUnits } from "viem";
 import { formatAmount } from "@/lib/utils";
-import { Balance } from "./Balance";
 
 export function Shielding() {
   const [privacyLoading, setPrivacyLoading] = useState(false);
@@ -34,8 +32,8 @@ export function Shielding() {
   const publicClient = usePublicClient();
   const { mutateAsync } = useWriteContract();
   
-  const { data: usdcRaw } = useBalance(PROTOCOL.address.USDC, userAddress);
-  const { refetch: refetchConfidentialBalance } = useConfidentialBalance(PROTOCOL.address.cUSDC, userAddress as any);
+  const { data: usdcRaw } = useBalance(PROTOCOL.address.UniswapUSDC, userAddress);
+  const { refetch: refetchConfidentialBalance } = useConfidentialBalance(PROTOCOL.address.UniswapCUsdc, userAddress as any);
 
   const handleShield = async () => {
     try {
@@ -49,27 +47,27 @@ export function Shielding() {
       
       // Check existing allowance; skip approval if sufficient
       const allowance = await publicClient!.readContract({
-        address: PROTOCOL.address.USDC,
+        address: PROTOCOL.address.UniswapUSDC,
         abi: erc20Abi,
         functionName: "allowance",
-        args: [userAddress as any, PROTOCOL.address.cUSDC]
+        args: [userAddress as any, PROTOCOL.address.UniswapCUsdc]
       }) as bigint;
 
       if (allowance < amount) {
         setShieldStage("approving");
         const approveHash = await mutateAsync({
-          address: PROTOCOL.address.USDC,
+          address: PROTOCOL.address.UniswapUSDC,
           abi: erc20Abi,
           functionName: "approve",
-          args: [PROTOCOL.address.cUSDC, amount]
+          args: [PROTOCOL.address.UniswapCUsdc, amount]
         });
         await publicClient!.waitForTransactionReceipt({ hash: approveHash });
       }
 
       setShieldStage("wrapping");
       const wrapHash = await mutateAsync({
-        address: PROTOCOL.address.cUSDC,
-        abi: PROTOCOL.abi.cUSDC as any,
+        address: PROTOCOL.address.UniswapCUsdc,
+        abi: PROTOCOL.abi.cToken as any,
         functionName: "wrap",
         args: [userAddress, amount]
       });
@@ -109,7 +107,7 @@ export function Shielding() {
   };
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
+    <div className="grid gap-8">
       <Card className="relative overflow-hidden">
         <CardHeader>
           <CardTitle>Shield Assets</CardTitle>
@@ -208,8 +206,6 @@ export function Shielding() {
           </Button>
         </CardFooter>
       </Card>
-
-      <Balance />
     </div>
   );
 }

@@ -13,6 +13,10 @@ export const PROTOCOL = {
     UniswapUSDC: contracts.Uniswap.USDC[CHAIN.sepolia] as `0x${string}`,
     UniswapUNI: contracts.Uniswap.UNI[CHAIN.sepolia] as `0x${string}`,
 
+    // Confidential versions of Uniswap tokens (note these are different from the protocol's cUSDC)
+    UniswapCUsdc: contracts.Uniswap.cUSDC[CHAIN.sepolia] as `0x${string}`,
+    UniswapCUni: contracts.Uniswap.cUNI[CHAIN.sepolia] as `0x${string}`,
+
     // Protocol
     ConfidentialLending: contracts.ConfidentialLending[CHAIN.sepolia] as `0x${string}`,
     ConfidentialSwap: contracts.ConfidentialSwap[CHAIN.sepolia] as `0x${string}`,
@@ -23,7 +27,7 @@ export const PROTOCOL = {
     },
   },
   abi: {
-    cUSDC: cUSDC.abi,
+    cToken: cUSDC.abi,
     ConfidentialLending: ConfidentialLending.abi,
   },
   decimals: {

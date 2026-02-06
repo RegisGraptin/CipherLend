@@ -168,7 +168,7 @@ export function ProtocolStatus() {
   const aUSDCFormatted = aUSDCBase ? formatAmount(aUSDCBase, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : undefined;
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
+    <div className="grid gap-8">
       <Card>
         <CardHeader>
           <CardTitle>Protocol Status</CardTitle>

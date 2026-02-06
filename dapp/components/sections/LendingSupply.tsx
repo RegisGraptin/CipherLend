@@ -76,7 +76,7 @@ export function LendingSupply() {
 
       const txHash = await mutateAsync({
         address: PROTOCOL.address.cUSDC,
-        abi: PROTOCOL.abi.cUSDC as any,
+        abi: PROTOCOL.abi.cToken as any,
         functionName: "confidentialTransferAndCall",
         args: [
           PROTOCOL.address.ConfidentialLending,

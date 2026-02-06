@@ -14,7 +14,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { SwapBalance } from "./SwapBalance";
 
 export function ConfidentialSwap() {
   const [swapAmount, setSwapAmount] = useState("");
@@ -36,7 +35,7 @@ export function ConfidentialSwap() {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 gap-6">
       {/* Left Column - Swap Interface */}
       <motion.div
         initial={{ opacity: 0, x: -20 }}
@@ -126,16 +125,6 @@ export function ConfidentialSwap() {
             </Button>
           </CardContent>
         </Card>
-      </motion.div>
-
-      {/* Right Column - Balance & Protocol Status */}
-      <motion.div
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.4, delay: 0.1 }}
-        className="space-y-6"
-      >
-        <SwapBalance />
       </motion.div>
     </div>
   );

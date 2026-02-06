@@ -21,7 +21,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     });
     console.log(`Confidential Wrapper contract: `, deployedToken.address);
 
-    // Cooldown between deployments 
+    // Cooldown between deployments
     await new Promise((resolve) => setTimeout(resolve, 5_000));
 
     // Verify the contract on Etherscan

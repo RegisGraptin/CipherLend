@@ -13,6 +13,8 @@ export function EncryptedBalance({
   tokenName: string;
   decryptedValue?: bigint;
 }) {
+
+  console.log("Rendering EncryptedBalance", { tokenName, decryptedValue });
   return (
     <>
       <div className="relative rounded-2xl border border-white/10 bg-black/40 p-4">
@@ -25,8 +27,8 @@ export function EncryptedBalance({
             <motion.p
               className="relative z-10 font-mono text-3xl font-semibold text-[#00FF94]"
               animate={{
-                filter: decryptedValue ? "blur(0px)" : "blur(8px)",
-                opacity: decryptedValue ? 1 : 0.8,
+                filter: decryptedValue !== undefined ? "blur(0px)" : "blur(8px)",
+                opacity: decryptedValue !== undefined ? 1 : 0.8,
               }}
               transition={{ duration: 0.4 }}
             >

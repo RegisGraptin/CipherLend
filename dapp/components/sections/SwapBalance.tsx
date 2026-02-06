@@ -20,31 +20,32 @@ import { useConnectedFhevm } from "@/lib/utils/fhevm";
 import { useConnectedSigner } from "@/lib/utils/useConnectedSigner";
 import { ClearBalance } from "../balance/ClearBalance";
 import { EncryptedBalance } from "../balance/EncryptedBalance";
+import { zeroHash } from "viem";
 
 export function SwapBalance() {
   const { address: userAddress } = useConnection();
-  const { data: cUsdcEncrypted } = useConfidentialBalance(PROTOCOL.address.cUSDC, userAddress as any);
-  const { data: lcUsdcEncrypted } = useConfidentialBalance(PROTOCOL.address.ConfidentialLending, userAddress as any);
+  const { data: cUsdcEncrypted } = useConfidentialBalance(PROTOCOL.address.UniswapCUsdc, userAddress as any);
+  const { data: cUniEncrypted } = useConfidentialBalance(PROTOCOL.address.UniswapCUni, userAddress as any);
 
   const { instance: fhevm, status: fheStatus } = useConnectedFhevm();
   const { signer } = useConnectedSigner();
 
   const storage = new GenericStringInMemoryStorage();
   const [cUsdcBig, setCUsdcBig] = useState<bigint | undefined>(undefined);
-  const [lcUsdcBig, setLcUsdcBig] = useState<bigint | undefined>(undefined);
+  const [cUniBig, setCUniBig] = useState<bigint | undefined>(undefined);
 
   const [revealEncrypted, setRevealEncrypted] = useState(false);
-  const [revealLending, setRevealLending] = useState(false);
+  const [revealUni, setRevealUni] = useState(false);
   
   const [lastCHandle, setLastCHandle] = useState<string | undefined>(undefined);
-  const [lastLHandle, setLastLHandle] = useState<string | undefined>(undefined);
+  const [lastUniHandle, setLastUniHandle] = useState<string | undefined>(undefined);
 
   const requests = [
-    ...(cUsdcEncrypted
-      ? [{ handle: cUsdcEncrypted as string, contractAddress: PROTOCOL.address.cUSDC }]
+    ...(cUsdcEncrypted && cUsdcEncrypted !== zeroHash
+      ? [{ handle: cUsdcEncrypted as string, contractAddress: PROTOCOL.address.UniswapCUsdc }]
       : []),
-    ...(lcUsdcEncrypted
-      ? [{ handle: lcUsdcEncrypted as string, contractAddress: PROTOCOL.address.ConfidentialLending }]
+    ...(cUniEncrypted && cUniEncrypted !== zeroHash
+      ? [{ handle: cUniEncrypted as string, contractAddress: PROTOCOL.address.UniswapCUni }]
       : []),
   ];
 
@@ -56,7 +57,19 @@ export function SwapBalance() {
     requests,
   });
 
-  console.log("Handles:", { cUsdcEncrypted, lcUsdcEncrypted });
+  // Handle zero hash case - automatically set to 0
+  useEffect(() => {
+    if (cUsdcEncrypted == zeroHash) {
+      setCUsdcBig(BigInt(0));
+      setRevealEncrypted(true);
+      setLastCHandle(zeroHash);
+    }
+    if (cUniEncrypted == zeroHash) {
+      setCUniBig(BigInt(0));
+      setRevealUni(true);
+      setLastUniHandle(zeroHash);
+    }
+  }, [cUsdcEncrypted, cUniEncrypted]);
 
   useEffect(() => {
     if (!results) return;
@@ -68,29 +81,29 @@ export function SwapBalance() {
       setRevealEncrypted(true);
       setLastCHandle(cUsdcEncrypted as string);
     }
-    // Process lcUSDC
-    if (lcUsdcEncrypted && raw[lcUsdcEncrypted as string] !== undefined) {
-      const val = raw[lcUsdcEncrypted as string];
-      setLcUsdcBig(val as bigint);
-      setRevealLending(true);
-      setLastLHandle(lcUsdcEncrypted as string);
+    // Process cUNI
+    if (cUniEncrypted && raw[cUniEncrypted as string] !== undefined) {
+      const val = raw[cUniEncrypted as string];
+      setCUniBig(val as bigint);
+      setRevealUni(true);
+      setLastUniHandle(cUniEncrypted as string);
     }
-  }, [results, cUsdcEncrypted, lcUsdcEncrypted]);
+  }, [results, cUsdcEncrypted, cUniEncrypted]);
 
   // Reset when handles change (one or both); user can click Reveal again
   useEffect(() => {
-    if (cUsdcEncrypted && cUsdcEncrypted !== lastCHandle) {
+    if (cUsdcEncrypted && cUsdcEncrypted !== lastCHandle && cUsdcEncrypted !== zeroHash) {
       setRevealEncrypted(false);
       setCUsdcBig(undefined);
     }
-    if (lcUsdcEncrypted && lcUsdcEncrypted !== lastLHandle) {
-      setRevealLending(false);
-      setLcUsdcBig(undefined);
+    if (cUniEncrypted && cUniEncrypted !== lastUniHandle && cUniEncrypted !== zeroHash) {
+      setRevealUni(false);
+      setCUniBig(undefined);
     }
-  }, [cUsdcEncrypted, lcUsdcEncrypted, lastCHandle, lastLHandle]);
+  }, [cUsdcEncrypted, cUniEncrypted, lastCHandle, lastUniHandle]);
 
-  const hasHandles = Boolean(cUsdcEncrypted || lcUsdcEncrypted);
-  const allRevealed = (cUsdcEncrypted ? revealEncrypted : true) && (lcUsdcEncrypted ? revealLending : true);
+  const hasHandles = Boolean(cUsdcEncrypted || cUniEncrypted);
+  const allRevealed = (cUsdcEncrypted ? revealEncrypted : true) && (cUniEncrypted ? revealUni : true);
 
   return (
     <Card>
@@ -107,7 +120,7 @@ export function SwapBalance() {
 
         <EncryptedBalance tokenName="cUSDC" decryptedValue={cUsdcBig} />
 
-        <EncryptedBalance tokenName="lcUSDC" decryptedValue={lcUsdcBig} />
+        <EncryptedBalance tokenName="cUNI" decryptedValue={cUniBig} />
 
       </CardContent>
       <CardFooter className="flex items-center justify-end gap-4">

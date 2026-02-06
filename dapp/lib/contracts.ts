@@ -27,11 +27,11 @@ export const contracts = {
       [CHAIN.sepolia]: "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
     },
     // Confidential version
-    // cUSDC: {
-    //   [CHAIN.sepolia]: "TBD",
-    // },
-    // cUNI: {
-    //   [CHAIN.sepolia]: "TBD",
-    // },
+    cUSDC: {
+      [CHAIN.sepolia]: "0xb5a33983Abe09102D006b00d7bd7B424c038f809",
+    },
+    cUNI: {
+      [CHAIN.sepolia]: "0xd190201eEEdcDFeCD1AC53c8E5f3B26ff0b2bB3B",
+    },
   },
 } as const;

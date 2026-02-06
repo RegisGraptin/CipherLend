@@ -9,6 +9,7 @@ import { Shielding } from "@/components/sections/Shielding";
 import { LendingDeck } from "@/components/sections/LendingDeck";
 import { ProtocolStatus } from "@/components/sections/ProtocolStatus";
 import { ConfidentialSwap } from "@/components/sections/ConfidentialSwap";
+import { SwapBalance } from "@/components/sections/SwapBalance";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
 
 export default function Home() {
@@ -38,65 +39,73 @@ export default function Home() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
             <TabsTrigger value="shield">Shield Assets</TabsTrigger>
-            <TabsTrigger value="lending">Lend</TabsTrigger>
             <TabsTrigger value="swap">Swap</TabsTrigger>
+            <TabsTrigger value="lending">Lend</TabsTrigger>
             <TabsTrigger value="portfolio">Protocol Status</TabsTrigger>
           </TabsList>
         </Tabs>
 
-        <AnimatePresence mode="wait">
-          {activeTab === "shield" && (
-            <motion.div
-              key="shield"
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -24 }}
-              transition={{ duration: 0.4 }}
-              className=""
-            >
-              <Shielding />
-            </motion.div>
-          )}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div className="w-full">
+            <AnimatePresence mode="wait">
+              {activeTab === "shield" && (
+                <motion.div
+                  key="shield"
+                  initial={{ opacity: 0, y: 24 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -24 }}
+                  transition={{ duration: 0.4 }}
+                  className=""
+                >
+                  <Shielding />
+                </motion.div>
+              )}
 
-          {activeTab === "lending" && (
-            <motion.div
-              key="lending"
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -24 }}
-              transition={{ duration: 0.4 }}
-              className=""
-            >
-              <LendingDeck />
-            </motion.div>
-          )}
+              {activeTab === "lending" && (
+                <motion.div
+                  key="lending"
+                  initial={{ opacity: 0, y: 24 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -24 }}
+                  transition={{ duration: 0.4 }}
+                  className=""
+                >
+                  <LendingDeck />
+                </motion.div>
+              )}
 
-          {activeTab === "swap" && (
-            <motion.div
-              key="swap"
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -24 }}
-              transition={{ duration: 0.4 }}
-              className=""
-            >
-              <ConfidentialSwap />
-            </motion.div>
-          )}
+              {activeTab === "swap" && (
+                <motion.div
+                  key="swap"
+                  initial={{ opacity: 0, y: 24 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -24 }}
+                  transition={{ duration: 0.4 }}
+                  className=""
+                >
+                  <ConfidentialSwap />
+                </motion.div>
+              )}
 
-          {activeTab === "portfolio" && (
-            <motion.div
-              key="portfolio"
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -24 }}
-              transition={{ duration: 0.4 }}
-              className=""
-            >
-              <ProtocolStatus />
-            </motion.div>
-          )}
-        </AnimatePresence>
+              {activeTab === "portfolio" && (
+                <motion.div
+                  key="portfolio"
+                  initial={{ opacity: 0, y: 24 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -24 }}
+                  transition={{ duration: 0.4 }}
+                  className=""
+                >
+                  <ProtocolStatus />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          <div className="w-full">
+            <SwapBalance />
+          </div>
+        </div>
       </div>
     </div>
   );
