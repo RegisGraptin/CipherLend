@@ -18,6 +18,9 @@ export const contracts = {
   AAVEPool: {
     [CHAIN.sepolia]: "0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951",
   },
+  V4Quoter: {
+    [CHAIN.sepolia]: "0x61b3f2011a92d183c7dbadbda940a7555ccf9227", // Uniswap V4 Quoter on Sepolia
+  },
   Uniswap: {
     // Clear version
     USDC: {

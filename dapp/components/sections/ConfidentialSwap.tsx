@@ -19,9 +19,10 @@ import { useConnectedFhevm } from "@/lib/utils/fhevm";
 import { useConnectedSigner } from "@/lib/utils/useConnectedSigner";
 import { useFHEEncryption } from "@/lib/fhevm-sdk";
 import { PROTOCOL } from "@/lib/protocol";
-import { parseUnits, toHex } from "viem";
+import { formatUnits, parseUnits, toHex } from "viem";
 import { formatAmount } from "@/lib/utils";
 import { useConfidentialBalance } from "@/lib/hooks/useConfidentialBalance";
+import { useSwapQuote } from "@/lib/hooks/useSwapQuote";
 
 export function ConfidentialSwap() {
   const [swapAmount, setSwapAmount] = useState("");
@@ -29,15 +30,22 @@ export function ConfidentialSwap() {
   const [swapStage, setSwapStage] = useState<"idle" | "swapping" | "done">("idle");
   const amountInputRef = useRef<HTMLInputElement | null>(null);
 
-  // FIXME: Get Quote from Uniswap
-  // https://github.com/Uniswap/examples/blob/main/v3-sdk/quoting/src/libs/quote.ts
-
   const { address: userAddress } = useConnection();
   const publicClient = usePublicClient();
   const { mutateAsync } = useWriteContract();
   
   const { instance: fhevm } = useConnectedFhevm();
   const { signer } = useConnectedSigner();
+
+  // Get quote from Uniswap V4 for USDC to UNI swap
+  const { amountOut: quoteAmountOut, isLoading: quoteLoading, outputDecimals } = useSwapQuote(
+    swapAmount,
+    PROTOCOL.address.UniswapUSDC,
+    PROTOCOL.address.UniswapUNI,
+    PROTOCOL.address.V4Quoter,
+    PROTOCOL.decimals.USDC, // Input: USDC has 6 decimals
+    PROTOCOL.decimals.UNI // Output: UNI has 18 decimals
+  );
 
   const encCUSDCToken = useFHEEncryption({
     instance: fhevm,
@@ -182,9 +190,16 @@ export function ConfidentialSwap() {
                   You will receive (estimated)
                 </p>
                 <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/40 px-4 py-4 text-sm text-zinc-300">
-                  <span className="text-zinc-400">Estimated output</span>
+                  <span className="text-zinc-400">{quoteLoading ? "Fetching quote..." : "Estimated output"}</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-2xl font-mono text-[#FF6B00]">{formatAmount(swapAmount || "0")}</span>
+                    <span className="text-2xl font-mono text-[#FF6B00]">
+                      {quoteAmountOut && outputDecimals
+                        ? formatAmount(formatUnits(quoteAmountOut / (10n ** BigInt(outputDecimals - 6)), 6), {
+                          maximumFractionDigits: 6,
+                          minimumFractionDigits: 6,
+                        })
+                        : "0.00"}
+                    </span>
                     <Badge className="border-[#FF6B00]/40 bg-[#FF6B00]/10 text-[#FF6B00] px-3">cUNI</Badge>
                   </div>
                 </div>
