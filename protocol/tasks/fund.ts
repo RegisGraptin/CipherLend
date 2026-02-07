@@ -1,8 +1,12 @@
+import { FhevmType } from "@fhevm/hardhat-plugin";
 import { task } from "hardhat/config";
 import type { TaskArguments } from "hardhat/types";
 
 const DEFAULT_ETH = "0.01"; // 0.01 ETH
-const DEFAULT_USDC = "1000"; // 1000 USDC
+const DEFAULT_USDC = "3"; // 3 USDC
+
+const CUSDC_UNISWAP_ADDRESS_SEPOLIA = "0xb5a33983Abe09102D006b00d7bd7B424c038f809";
+const CONFIDENTIAL_SWAP_SEPOLIA = "0x82c4Df3dBA639CE15c181A0880cA68e122e88E0e";
 
 const IERC20_ABI = [
   "function decimals() view returns (uint8)",
@@ -38,7 +42,7 @@ task("task:fund-eth-usdc", "Send small ETH and transfer USDC")
 
     // Loop over accounts: send ETH then USDC
     const ethAmount = hreEthers.parseEther(taskArgs.eth as string);
-    const usdcAddress = process.env.USDC_ADDRESS_SEPOLIA;
+    const usdcAddress = process.env.USDC_UNISWAP_ADDRESS_SEPOLIA;
 
     let erc20: any | undefined;
     let usdcAmount: bigint | undefined;
@@ -51,7 +55,7 @@ task("task:fund-eth-usdc", "Send small ETH and transfer USDC")
         console.warn(`USDC setup failed: ${e?.message || e}`);
       }
     } else {
-      console.warn("USDC_ADDRESS_SEPOLIA is not set or invalid; skipping USDC transfers.");
+      console.warn("USDC_UNISWAP_ADDRESS_SEPOLIA is not set or invalid; skipping USDC transfers.");
     }
 
     for (const wallet of accounts) {
@@ -110,7 +114,7 @@ task("task:shield-usdc", "Wrap USDC into confidential cUSDC via ERC7984 wrapper"
 
     // Resolve underlying USDC and decimals
     const anySigner = wallets[0];
-    const wrapperForInfo = await ethers.getContractAt("ERC7984Mock", wrapper.address, anySigner);
+    const wrapperForInfo = await ethers.getContractAt("ERC7984Mock", CUSDC_UNISWAP_ADDRESS_SEPOLIA, anySigner);
     const usdcAddress: string = await wrapperForInfo.underlying();
     const erc20Abi = [
       "function decimals() view returns (uint8)",
@@ -126,7 +130,7 @@ task("task:shield-usdc", "Wrap USDC into confidential cUSDC via ERC7984 wrapper"
       const erc20 = await ethers.getContractAt(erc20Abi, usdcAddress, w);
       console.log(`Approving ${amountStr} USDC for wrapper from ${w.address} ...`);
       try {
-        const tx = await erc20.approve(wrapper.address, amountUnits);
+        const tx = await erc20.approve(CUSDC_UNISWAP_ADDRESS_SEPOLIA, amountUnits);
         console.log(`approve tx: ${tx.hash}`);
         await tx.wait();
       } catch (e: any) {
@@ -136,7 +140,7 @@ task("task:shield-usdc", "Wrap USDC into confidential cUSDC via ERC7984 wrapper"
 
     // Loop 2: wrap tokens for each wallet
     for (const w of wallets) {
-      const wrapperContract = await ethers.getContractAt("ERC7984Mock", wrapper.address, w);
+      const wrapperContract = await ethers.getContractAt("ERC7984Mock", CUSDC_UNISWAP_ADDRESS_SEPOLIA, w);
       console.log(`Wrapping ${amountStr} USDC into cUSDC for ${w.address} ...`);
       try {
         const tx = await wrapperContract.wrap(w.address, amountUnits);
@@ -148,4 +152,89 @@ task("task:shield-usdc", "Wrap USDC into confidential cUSDC via ERC7984 wrapper"
     }
 
     console.log("Shielding complete.");
+  });
+
+/**
+ * Transfer cUSDC to ConfidentialSwap contract (triggers onConfidentialTransferReceived)
+ * Example:
+ *   npx hardhat --network sepolia task:deposit-swap --swapaddress 0x...
+ */
+task("task:deposit-swap", "Deposit cUSDC into ConfidentialSwap contract")
+  .addParam("swapaddress", "Address of the ConfidentialSwap contract")
+  .addOptionalParam("amount", "cUSDC amount to deposit per user", "0.5")
+  .setAction(async function (taskArgs: TaskArguments, hre) {
+    const { ethers, fhevm } = hre;
+
+    // Initialize FHE CLI once
+    await fhevm.initializeCLIApi();
+
+    const swapAddress = taskArgs.swapaddress;
+
+    // Env private keys
+    const pk1 = process.env.ACCOUNT_1_PRIVATE_KEY;
+    const pk2 = process.env.ACCOUNT_2_PRIVATE_KEY;
+
+    const provider = ethers.provider;
+    const wallets = [pk1, pk2]
+      .filter((pk): pk is string => typeof pk === "string" && pk.trim().length > 0)
+      .map((pk) => (pk.startsWith("0x") ? pk.trim() : `0x${pk.trim()}`))
+      .map((pk) => new ethers.Wallet(pk, provider));
+
+    if (wallets.length === 0) {
+      console.warn("No env private keys found: set ACCOUNT_1_PRIVATE_KEY / ACCOUNT_2_PRIVATE_KEY.");
+      return;
+    }
+
+    // Get the swap contract to determine cUSDC address
+    const swap = await ethers.getContractAt("ConfidentialSwap", swapAddress);
+    const cUSDCAddress = await swap.cUSDC();
+    console.log(`cUSDC wrapper address: ${cUSDCAddress}`);
+
+    // Parse amount (cUSDC has 6 decimals like USDC)
+    const amountStr = taskArgs.amount as string;
+    const amountUnits = ethers.parseUnits(amountStr, 6);
+
+    console.log(`Depositing ${amountStr} cUSDC to swap contract at ${swapAddress}\n`);
+
+    // Loop over wallets and deposit from each
+    for (const wallet of wallets) {
+      console.log(`\n=== Depositing from ${wallet.address} ===`);
+
+      const wrapperContract = await ethers.getContractAt("ERC7984Mock", CUSDC_UNISWAP_ADDRESS_SEPOLIA, wallet);
+
+      // Decrypt wallet balance
+      const walletBalance = await wrapperContract.confidentialBalanceOf(wallet.address);
+      const decryptedBalance = await fhevm.userDecryptEuint(
+        FhevmType.euint64,
+        walletBalance,
+        CUSDC_UNISWAP_ADDRESS_SEPOLIA,
+        wallet,
+      );
+      console.log(`Decrypted cUSDC balance: ${ethers.formatUnits(decryptedBalance, 6)} cUSDC`);
+
+      try {
+        // Call confidentialTransfer - this will trigger onConfidentialTransferReceived in the swap contract
+        const encrypted = await fhevm
+          .createEncryptedInput(CUSDC_UNISWAP_ADDRESS_SEPOLIA, wallet.address)
+          .add64(amountUnits)
+          .encrypt();
+
+        console.log(`Transferring ${amountStr} cUSDC to swap contract...`);
+        const tx = await wrapperContract["confidentialTransferAndCall(address,bytes32,bytes,bytes)"](
+          CONFIDENTIAL_SWAP_SEPOLIA,
+          encrypted.handles[0],
+          encrypted.inputProof,
+          "0x",
+        );
+
+        console.log(`Transaction hash: ${tx.hash}`);
+
+        const receipt = await tx.wait();
+        console.log(`✅ Deposit confirmed in block ${receipt?.blockNumber}`);
+      } catch (e: any) {
+        console.error(`❌ Deposit failed for ${wallet.address}: ${e?.message || e}`);
+      }
+    }
+
+    console.log("\n✅ All deposits complete!");
   });

@@ -98,6 +98,10 @@ npx hardhat --network sepolia task:fund-eth-usdc
 npx hardhat --network sepolia task:shield-usdc
 ```
 
+```bash
+npx hardhat --network sepolia task:deposit-swap --swapaddress 0x82c4Df3dBA639CE15c181A0880cA68e122e88E0e
+```
+
 ### Supply liquidity via ConfidentialLending - Lending
 
 - Encrypts the amount and sends cUSDC using `confidentialTransferAndCall` to `ConfidentialLending`.

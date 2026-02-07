@@ -13,7 +13,7 @@ export function useConfidentialBalance(
     args: [userAddress!],
     query: {
       enabled: !!userAddress,
-      // refetchInterval: 5000,
+      refetchInterval: 5000,
     },
   });
 
