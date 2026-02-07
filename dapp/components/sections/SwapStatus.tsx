@@ -17,7 +17,7 @@ import { PROTOCOL } from "@/lib/protocol";
 import { useConnectedFhevm } from "@/lib/utils/fhevm";
 import { useConfidentialSwapStatus } from "@/lib/hooks/useConfidentialSwapStatus";
 import ConfidentialSwapAbi from "@/lib/abis/ConfidentialSwap.json" assert { type: "json" };
-import { zeroHash } from "viem";
+import { formatUnits, parseUnits, zeroHash } from "viem";
 import { useConfidentialBalance } from "@/lib/hooks/useConfidentialBalance";
 
 export function SwapStatus() {
@@ -48,7 +48,7 @@ export function SwapStatus() {
     currentNumberOfUsers,
     minTimeBetweenRounds,
     minDistinctUsers,
-    nextRoundDeltaHandle,
+    roundDeltaHandle,
     totalRequestedAmount,
     totalReceivedAmount,
     userAmountHandle,
@@ -91,9 +91,9 @@ export function SwapStatus() {
       setIsUnshieldingForSwap(true);
       
       // The unwrap was already called by callNextRound in the smart contract
-      // Step 1: Fetch the UnwrapRequested event from recent blocks
+      // Step 1: Fetch the most recent UnwrapRequested event from recent blocks
       const latestBlock = await publicClient!.getBlockNumber();
-      const fromBlock = latestBlock - BigInt(100); // Search last 100 blocks
+      const fromBlock = latestBlock - BigInt(100); // Search last 1000 blocks to be safe
       
       const logs = await publicClient!.getLogs({
         address: PROTOCOL.address.UniswapCUsdc,
@@ -102,7 +102,7 @@ export function SwapStatus() {
           name: 'UnwrapRequested',
           inputs: [
             { type: 'address', indexed: true, name: 'receiver' },
-            { type: 'bytes32', indexed: false, name: 'handle' },
+            { type: 'bytes32', indexed: false, name: 'amount' },
           ],
         },
         args: {
@@ -117,11 +117,18 @@ export function SwapStatus() {
         return;
       }
 
-      // Get the last event's handle
-      const lastLog = logs[logs.length - 1];
-      const handle = lastLog.args.handle as `0x${string}`;
+      // Get the most recent event's handle (sort by block number and log index to ensure we get the latest)
+      const sortedLogs = [...logs].sort((a, b) => {
+        if (a.blockNumber !== b.blockNumber) {
+          return Number(b.blockNumber - a.blockNumber); // Most recent block first
+        }
+        return Number((b.logIndex || 0n) - (a.logIndex || 0n)); // Most recent log in block first
+      });
       
-      console.log("UnwrapRequested handle:", handle);
+      const mostRecentLog = sortedLogs[0];
+      const handle = mostRecentLog.args.amount as `0x${string}`;
+      
+      console.log("Most recent UnwrapRequested handle:", handle, "from block:", mostRecentLog.blockNumber);
 
       // Step 2: Public decrypt the handle
       const results = await fhevm?.publicDecrypt([handle]);
@@ -152,9 +159,9 @@ export function SwapStatus() {
     try {
       setIsExecutingRound(true);
       
-      // Fetch the publicly decryptable handle
-      const results = await fhevm?.publicDecrypt([nextRoundDeltaHandle as `0x${string}`]);
-      console.log("Decryption results for nextRoundDelta:", results);
+      // Fetch the publicly decryptable handle for the previous round
+      const results = await fhevm?.publicDecrypt([roundDeltaHandle as `0x${string}`]);
+      console.log("Decryption results for roundDelta:", results);
 
       if (!results) {
         console.error("No decryption results available");
@@ -304,7 +311,7 @@ export function SwapStatus() {
                     size="sm"
                     variant="outline"
                     onClick={onExecuteRound}
-                    disabled={!nextRoundDeltaHandle || isExecutingRound}
+                    disabled={!roundDeltaHandle || isExecutingRound}
                   >
                     {isExecutingRound ? "Executing..." : "Execute Round"}
                   </Button>
@@ -322,13 +329,13 @@ export function SwapStatus() {
                 <div className="rounded-xl border border-white/10 bg-black/30 p-3">
                   <p className="text-xs text-zinc-500">cUSDC Swapped</p>
                   <p className="mt-1 text-lg font-mono text-white">
-                    {totalRequestedAmount ? Number(totalRequestedAmount) / 1e6 : "0.00"}
+                    {totalRequestedAmount ? formatUnits(totalRequestedAmount, 6) : "0.00"}
                   </p>
                 </div>
                 <div className="rounded-xl border border-white/10 bg-black/30 p-3">
                   <p className="text-xs text-zinc-500">cUNI Received</p>
                   <p className="mt-1 text-lg font-mono text-white">
-                    {totalReceivedAmount ? Number(totalReceivedAmount) / 1e18 : "0.00"}
+                    {totalReceivedAmount ? formatUnits(totalReceivedAmount, 6) : "0.00"}
                   </p>
                 </div>
               </div>

@@ -133,6 +133,7 @@ contract ConfidentialSwap is ZamaEthereumConfig, IERC7984Receiver {
         FHE.allowTransient(nextRoundDelta, cUSDC);
         ERC7984ERC20Wrapper(cUSDC).unwrap(address(this), address(this), nextRoundDelta);
 
+        nextRoundDelta = euint64.wrap(0);
         currentRound++;
 
         // Reset the threshold for the next round

@@ -13,7 +13,7 @@ export const contracts = {
     [CHAIN.sepolia]: "0x4c6faABbDD81B1c8A8d6204BA3A511467e081205",
   },
   ConfidentialSwap: {
-    [CHAIN.sepolia]: "0x8c4fc00C69EBaE258f394bd7c7788Db6F2761E63",
+    [CHAIN.sepolia]: "0x82c4Df3dBA639CE15c181A0880cA68e122e88E0e",
   },
   AAVEPool: {
     [CHAIN.sepolia]: "0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951",

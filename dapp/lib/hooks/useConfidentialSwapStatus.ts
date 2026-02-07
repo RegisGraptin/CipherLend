@@ -31,11 +31,6 @@ export function useConfidentialSwapStatus(userAddress?: Address) {
       abi: ConfidentialSwapAbi.abi as any,
       functionName: "MIN_DISTINCT_USERS",
     },
-    {
-      address: PROTOCOL.address.ConfidentialSwap,
-      abi: ConfidentialSwapAbi.abi as any,
-      functionName: "nextRoundDelta",
-    },
   ] as const;
 
   const { data: baseData, refetch: refetchBase, ...baseRest } = useReadContracts({ contracts: baseContracts });
@@ -45,12 +40,18 @@ export function useConfidentialSwapStatus(userAddress?: Address) {
   const currentNumberOfUsers = baseData?.[2]?.result as bigint | undefined;
   const minTimeBetweenRounds = baseData?.[3]?.result as bigint | undefined;
   const minDistinctUsers = baseData?.[4]?.result as bigint | undefined;
-  const nextRoundDeltaHandle = baseData?.[5]?.result as `0x${string}` | undefined;
 
-  // Second fetch for round-specific data
+  // Calculate round offset for previous round (the one that needs to be executed/displayed)
   const roundOffset = currentRound && Number(currentRound) > 0 ? BigInt(Number(currentRound) - 1) : BigInt(0);
   
+  // Fetch round-specific data including roundDelta handle
   const roundContracts = [
+    {
+      address: PROTOCOL.address.ConfidentialSwap,
+      abi: ConfidentialSwapAbi.abi as any,
+      functionName: "roundDelta",
+      args: [roundOffset],
+    },
     {
       address: PROTOCOL.address.ConfidentialSwap,
       abi: ConfidentialSwapAbi.abi as any,
@@ -76,9 +77,10 @@ export function useConfidentialSwapStatus(userAddress?: Address) {
     query: { enabled: !!currentRound && Number(currentRound) > 0 }
   });
 
-  const totalRequestedAmount = roundData?.[0]?.result as bigint | undefined;
-  const totalReceivedAmount = roundData?.[1]?.result as bigint | undefined;
-  const userAmountHandle = userAddress ? (roundData?.[2]?.result as `0x${string}` | undefined) : undefined;
+  const roundDeltaHandle = roundData?.[0]?.result as `0x${string}` | undefined;
+  const totalRequestedAmount = roundData?.[1]?.result as bigint | undefined;
+  const totalReceivedAmount = roundData?.[2]?.result as bigint | undefined;
+  const userAmountHandle = userAddress ? (roundData?.[3]?.result as `0x${string}` | undefined) : undefined;
 
   const refetch = async () => {
     await refetchBase();
@@ -91,7 +93,7 @@ export function useConfidentialSwapStatus(userAddress?: Address) {
     currentNumberOfUsers,
     minTimeBetweenRounds,
     minDistinctUsers,
-    nextRoundDeltaHandle,
+    roundDeltaHandle,
     totalRequestedAmount,
     totalReceivedAmount,
     userAmountHandle,
